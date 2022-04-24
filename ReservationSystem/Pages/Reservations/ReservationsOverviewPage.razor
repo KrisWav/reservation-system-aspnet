@@ -1,0 +1,51 @@
+@using ReservationSystem.Data.Services
+@using ReservationSystem.Data.Models
+@page "/account/reservations"
+@inject ReservationService _reservationService
+@inject NavigationManager _navigationManager
+
+<AuthorizeView>
+    <Authorized>
+        <h3>Moje rezervace</h3>
+        
+        @if (_reservations.Count != 0)
+        {
+            <div class="container d-flex align-items-start flex-wrap">
+                @foreach (var res in _reservations)
+                {
+                    <div class="card" style="width: 24rem; margin: 1.5rem 1rem 1.5rem 1rem;">
+                        <div class="card-header">
+                            <h4 class="card-title">Rezervace č.@res.Id</h4>
+                        </div>
+                        <div class="card-body">
+                            <h5>@res.Event.Name</h5>
+                            <p class="card-text">Počet sedadel: @res.Seats.Count</p>
+                            <button class="btn btn-primary" @onclick="(e) => { NavigateToReservationDetail(res.Id); }">Detail</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p>Nemate zadne rezervace k zobrazeni. :/</p>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>Nejste přihlášen</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    List<Reservation> _reservations = new List<Reservation>();
+    protected override void OnInitialized()
+    {
+        _reservations = _reservationService.GetUserReservations();
+    }
+
+    private EventCallback NavigateToReservationDetail(int id)
+    {
+        _navigationManager.NavigateTo($"/account/reservation/{id}");
+        return new EventCallback();
+    }
+}

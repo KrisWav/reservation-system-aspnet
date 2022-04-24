@@ -1,0 +1,19 @@
+@page
+@using Microsoft.AspNetCore.Identity
+@using ReservationSystem.Data.Models
+@attribute [IgnoreAntiforgeryToken]
+@inject SignInManager<AppUser> SignInManager
+
+@functions {
+
+    public async Task<IActionResult> OnPost()
+    {
+        if (this.SignInManager.IsSignedIn(User))
+        {
+            await SignInManager.SignOutAsync();
+        }
+
+        return Redirect("~/");
+    }
+
+}

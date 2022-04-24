@@ -1,0 +1,47 @@
+@using ReservationSystem.Data.Models
+@using ReservationSystem.Data.Services
+@page "/"
+@inject EventService _eventService
+@inject NavigationManager _navigation
+
+<h1>Seznam akcí</h1>
+
+<div class="container d-flex align-items-start flex-wrap">
+    @foreach (var ev in events)
+    {
+        <div class="card" style="width: 24rem; margin: 1.5rem 1rem 1.5rem 1rem;">
+            <div class="card-body">
+                <h5 class="card-title">@ev.Name</h5>
+                <h6 class="card-subtitle mb-2 text-muted">@ev.HappeningDate</h6>
+                <p class="card-text">@ev.Venue</p>
+                <button @onclick="(a) => { NavigateToEvent(ev); }" class="btn btn-primary">Přejít na akci</button>
+                <AuthorizeView Roles="Admin">
+                    <Authorized><button @onclick="(e) => { DeleteEvent(ev); }" class="btn btn-danger">Odstranit</button></Authorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    }
+
+</div>
+
+@code{
+    List<Event> events = new List<Event>();
+    protected override void OnInitialized()
+    {
+        events = _eventService.GetEvents();
+    }
+
+    EventCallback NavigateToEvent(Event e)
+    {
+        _navigation.NavigateTo($"/event/{e.Id}");
+        return new EventCallback();
+    }
+
+    private EventCallback DeleteEvent(Event e)
+    {
+        _eventService.DeleteEvent(e);
+        events.Remove(e);
+        StateHasChanged();
+        return new EventCallback();
+    }
+}

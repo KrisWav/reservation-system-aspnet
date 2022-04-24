@@ -1,0 +1,140 @@
+@using ReservationSystem.Data.Services
+@using ReservationSystem.Data.Models
+@using ReservationSystem.Data.Containers
+
+@page "/event/{EventId:int}/auditorium/{AuditoriumId:int}"
+@inject EventService _eventService
+@inject NavigationManager _navigation
+@inject ReservationContainer _reservationContainer
+
+<h3>Vyber mist v hledisti @_auditorium.Name</h3>
+
+<div class="container">
+    <div class="auditorium">
+        <div class="auditorium-header">
+        </div>
+        <div class="auditorium-body">
+            @foreach(var seatRow in _seats)
+            {
+                <div class="auditorium-row">
+                    @foreach (var seat in seatRow)
+                    {
+                        @if (seat.Reservation != null)
+                        {
+                            <div class="auditorium-seat occupied">
+                                <div class="auditorium-seat-desc">
+                                    <h6>Sedadlo @seat.Column</h6>
+                                    <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                    <div class="reserved auditorium-seat-desc-text">Rezervováno</div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @if (seat.IsSelected != true)
+                            {
+                                <div class="auditorium-seat free" @onclick="(e) => { SeatSelection(seat); }">
+                                    <div class="auditorium-seat-desc">
+                                        <h6>Sedadlo @seat.Column</h6>
+                                        <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                        <div class="not-reserved auditorium-seat-desc-text">Volné</div>
+                                    </div>
+                                </div>
+                            }
+                            else {
+                                <div class="auditorium-seat selected" @onclick="(e) => { SeatDeselection(seat); }">
+                                    <div class="auditorium-seat-desc">
+                                        <h6>Sedadlo @seat.Column</h6>
+                                        <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                        <div class="not-reserved auditorium-seat-desc-text">Volné</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    @if (_selectedSeats.Count > 0)
+    {
+        <div class="reservation d-flex align-items-start flex-wrap mt-5">
+            @foreach (var selectedSeat in _selectedSeats)
+            {
+                <div class="card" style="margin: 0.5rem;">
+                    <div class="card-body">
+                        <h6 class="card-title">Sedadlo @selectedSeat.Column řada @selectedSeat.Row</h6>
+                        <button class="btn btn-danger" @onclick="(e) =>  { SeatDeselection(selectedSeat); }">Remove</button>
+                    </div>
+                </div>
+            }
+            <button class="btn btn-primary mt-4" @onclick="(e) => { ConfirmReservation(); }">Potvrdit rezervaci</button>
+        </div>
+    }
+</div>
+
+
+
+@code {
+    [Parameter]
+    public int EventId { get; set; }
+    [Parameter]
+    public int AuditoriumId { get; set; }
+
+    Auditorium _auditorium;
+    Event _event;
+    List<List<Seat>> _seats = new List<List<Seat>>();
+    List<Seat> _selectedSeats = new List<Seat>();
+
+    protected override void OnInitialized()
+    {
+        _auditorium = _eventService.GetAuditoriumById(AuditoriumId);
+        _event = _eventService.GetEventById(EventId);
+        _seats = SortSeats();
+        _selectedSeats = new List<Seat>();
+    }
+
+    private EventCallback ConfirmReservation()
+    {
+        _reservationContainer.ContainReservation(_event, _auditorium, _selectedSeats);
+        _navigation.NavigateTo("/reservation/confirm");
+        return new EventCallback();
+    }
+
+    private List<List<Seat>> SortSeats()
+    {
+        List<Seat> sortedSeats = _auditorium.Seats.OrderBy(o => o.Row).ThenBy(o => o.Column).ToList();
+        var seats = new List<List<Seat>>();
+        int seatCounter = 0;
+        for (int i = 0; i < _auditorium.Rows; i++)
+        {
+            List<Seat> seatsInRow = new List<Seat>();
+            for (int j = 0; j < _auditorium.SeatsInRow; j++)
+            {
+                seatsInRow.Add(sortedSeats[seatCounter]);
+                seatCounter++;
+            }
+            seats.Add(seatsInRow);
+        }
+        return seats;
+    }
+
+    private EventCallback SeatSelection(Seat seat)
+    {
+        seat.IsSelected = true;
+        _seats[seat.Row - 1][seat.Column - 1] = seat;
+        _selectedSeats.Add(seat);
+        StateHasChanged();
+        return new EventCallback();
+    }
+
+    private EventCallback SeatDeselection(Seat seat)
+    {
+        seat.IsSelected = false;
+        _seats[seat.Row - 1][seat.Column - 1] = seat;
+        _selectedSeats.Remove(seat);
+        StateHasChanged();
+        return new EventCallback();
+    }
+
+}

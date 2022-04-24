@@ -1,0 +1,67 @@
+@page "/admin/verifyUsers"
+@using ReservationSystem.Data.Services
+@using ReservationSystem.Data.Models
+@inject UserService _userService
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <h3>Users verification page</h3>
+        
+        <div class="container">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th scope="col">Id</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">#</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var user in _users)
+                {
+                    <tr>
+                        <td style="font-weight: bold;">@user.Id</td>
+                        <td>@user.Email</td>
+                        <td>@GetUserRoleName(user)</td>
+                        <td><button class="btn btn-sm btn-outline-success" @onclick="(e) => { VerifyUser(user); }">Ověřit uživatele</button></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <Error></Error>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<AppUser> _users { get; set; }
+    
+    protected override void OnInitialized()
+    {
+        _users = _userService.GetAllUsers();
+    }
+
+    private string GetUserRoleName(AppUser user)
+    {
+        var roles = _userService.GetUserRoles(user);
+        if (roles.Count == 0)
+        {
+            return "Registered";
+        }
+        else
+        {
+            return roles[0];
+        }
+    }
+
+    private async Task<EventCallback> VerifyUser(AppUser user)
+    {
+        await _userService.VerifyUser(user);
+        StateHasChanged();
+        return new EventCallback();
+    }
+
+}

@@ -1,0 +1,122 @@
+@using ReservationSystem.Data.Models
+@using ReservationSystem.Data.Services
+@using System.Linq.Expressions
+
+@page "/admin/createEvent"
+@inject NavigationManager _navigation
+@inject EventService _eventService
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <h3>Vytvoření události</h3>
+        
+        <div class="container w-50">
+            <div class="mb-3">
+                <label for="eventName" class="form-label">Nazev akce</label>
+                <input type="text" @bind="eventName" class="form-control" id="eventName" placeholder="Nazev akce">
+            </div>
+            <div class="mb-3">
+                <label for="eventDate" class="form-label">Datum akce</label>
+                <input type="date" @bind="eventDate" class="form-control" id="eventDate" placeholder="Vyberte datum">
+            </div>
+            <div class="mb-3">
+                <label for="eventTime" class="form-label">Čas konání</label>
+                <input type="text" @bind="eventTime" class="form-control" id="eventTime" placeholder="00:00">
+                @if (!timespanParsed)
+                {
+                    <p class="text-danger"></p>
+                }
+            </div>
+            <div class="mb-3">
+                <label for="eventOrganiser" class="form-label">Organizátor</label>
+                <input type="text" @bind="eventOrganiser" class="form-control" id="eventOrganiser" placeholder="Jméno organizátora">
+            </div>
+            <div class="mb-10">
+                <label for="eventVenue" class="form-label">Místo konání</label>
+                <input type="text" @bind="eventVenue" class="form-control" id="eventVenue" placeholder="Název místa konání">
+            </div>
+            <h4>Přidání hlediště</h4>
+            <div class="mb-3">
+                <label for="auditoriumName" class="form-label">Název</label>
+                <input type="text" @bind="eventAudiotrium.Name" class="form-control" id="auditoriumName" placeholder="Název hlediště">
+            </div>
+            <div class="mb-3">
+                <label for="auditoriumRows" class="form-label">Počet řad</label>
+                <input type="number" @bind="eventAudiotrium.Rows" class="form-control" id="auditoriumRows">
+            </div>
+            <div class="mb-3">
+                <label for="auditoriumSeatsInRow" class="form-label">Počet sedadel v řadě</label>
+                <input type="number" @bind="eventAudiotrium.SeatsInRow" class="form-control" id="auditoriumSeatsInRow">
+            </div>
+            <div class="mb-3">
+                <button class="btn btn-primary" @onclick="e => { AddVenue(); }">Přidat hlediště</button>
+            </div>
+            @foreach (var a in auditoriums)
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">@a.Name</h6>
+                        <p class="card-text">Kapacita: @(a.Rows*a.SeatsInRow) míst</p>
+                        <button class="btn btn-danger" @onclick="(e) => { DeleteVenue(a); }">Odstranit</button>
+                    </div>
+                </div>
+            }
+            
+            <div class="mt-8">
+                <button class="btn btn-success" @onclick="(e) => { CreateEvent(); }">Vytvořit událost</button>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <Error></Error>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    bool timespanParsed = true;
+    string eventName = String.Empty;
+    DateTime eventDate;
+    string eventTime = String.Empty;
+    string eventOrganiser = String.Empty;
+    string eventVenue = String.Empty;
+    Auditorium eventAudiotrium = new Auditorium();
+    List<Auditorium> auditoriums = new List<Auditorium>();
+
+    EventCallback AddVenue()
+    {
+        auditoriums.Add(eventAudiotrium);
+        eventAudiotrium = new Auditorium();
+        StateHasChanged();
+        return new EventCallback();
+    }
+
+    EventCallback DeleteVenue(Auditorium a)
+    {
+        auditoriums.Remove(a);
+        StateHasChanged();
+        return new EventCallback();
+    }
+
+    EventCallback CreateEvent()
+    {
+        timespanParsed = TimeSpan.TryParse(eventTime, out TimeSpan timeSpan);
+        if(timespanParsed)
+        {
+            eventDate = eventDate.Add(timeSpan);
+            Event _event = new Event()
+            {
+                Name = eventName,
+                Venue = eventVenue,
+                Organiser = eventOrganiser,
+                Auditoriums = auditoriums,
+                HappeningDate = eventDate
+            };
+            var e = _eventService.CreateEvent(_event, auditoriums);
+        
+            _navigation.NavigateTo($"/event/{e.Id}");
+            return new EventCallback();
+        }
+        StateHasChanged();
+        return new EventCallback();
+    }
+}

@@ -1,0 +1,45 @@
+@using ReservationSystem.Data.Models
+@using ReservationSystem.Data.Services
+
+@page "/event/{Id:int}"
+@inject EventService _eventService
+@inject NavigationManager _navigation
+
+<h3>@_event.Name</h3>
+
+<div class="container">
+    <h4>Seznam hledišť</h4>
+    @foreach (var auditorium in _event.Auditoriums)
+    {
+        <div class="card w-75">
+            <div class="card-body">
+                <h5 class="card-title">@auditorium.Name</h5>
+                <p class="card-text">Kapacita: @CalculateAuditoriumSize(auditorium)</p>
+                <button @onclick="(e) => { NavigateToAuditorium(auditorium); }" class="btn btn-primary">Vybrat místa</button>
+            </div>
+        </div>
+    }
+</div>
+ 
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private Event _event;
+    
+    protected override void OnInitialized()
+    {
+        _event = _eventService.GetEventById(Id);
+    }
+
+    string CalculateAuditoriumSize(Auditorium auditorium)
+    {
+        string result = (auditorium.Rows * auditorium.SeatsInRow).ToString();
+        return result;
+    }
+
+    EventCallback NavigateToAuditorium(Auditorium auditorium)
+    {
+        _navigation.NavigateTo($"/event/{Id}/auditorium/{auditorium.Id}");
+        return new EventCallback();
+    }
+}

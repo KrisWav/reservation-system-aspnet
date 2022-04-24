@@ -1,0 +1,70 @@
+@using ReservationSystem.Data.Models
+@using ReservationSystem.Data.Services
+
+@page "/account/reservation/{ReservationId:int}"
+
+@inject ReservationService _reservationService
+@inject UserService _userService
+@inject NavigationManager _navigationManager
+
+<div class="container">
+    <AuthorizeView>
+        <NotAuthorized>
+            <h3>Vase rezervace byla uspesna</h3>
+            <p>Moc dekujeme za objednavku. Vase listky naleznete ve vasi emailove schrance.</p>
+        </NotAuthorized>
+        <Authorized>
+            @if (_reservation.User != null)
+            {
+                @if (_userService.GetCurrentUser().Result.Id == _reservation.User.Id)
+                {
+                    <h2>Detail rezervace č.@_reservation.Id</h2>
+                    <h3>Název akce: @_reservation.Event.Name</h3>
+                    <p>Datum: @_reservation.Event.HappeningDate</p>
+                    <h4>Sedadla v hledišti @_reservation.Auditorium.Name</h4>
+                    @foreach (var seat in _reservation.Seats)
+                    {
+                        <p>Řada @seat.Row - sedadlo @seat.Column</p>
+                    }
+                    <button class="btn btn-danger" @onclick="(e) => { CancelReservation(); }">Zrusit rezervaci</button>
+                }
+                else
+                {
+                    <p>Přístup odepřen.</p>
+                }
+            }
+            else
+            {
+                <p>Přístup odepřen.</p>
+            }
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    [Parameter]
+    public int ReservationId { get; set; }
+
+    private Reservation _reservation;
+
+    private EventCallback CancelReservation()
+    {
+        _reservationService.DeleteReservation(_reservation);
+        _navigationManager.NavigateTo("/account/reservations");
+        return new EventCallback();
+    }
+
+    protected override void OnInitialized()
+    {
+        var reservation = _reservationService.GetReservation(ReservationId);
+        if (reservation != null)
+        {
+            _reservation = reservation;
+        }
+        else
+        {
+            _navigationManager.NavigateTo("/404");
+        }
+    }
+
+}

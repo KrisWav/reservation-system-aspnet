@@ -1,0 +1,127 @@
+@using Data.Containers
+@using Data.Services
+@using Data.Models
+
+@inject ReservationContainer _reservationContainer
+@inject EventService _eventService
+@inject ReservationService _reservationService
+@inject UserService _userService
+@inject NavigationManager _navigationManager
+@page "/reservation/confirm"
+
+<h3>Potvrzeni rezervace</h3>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h5>Rezervace na @_event.Name</h5>
+            <p>Hlediště: @_auditorium.Name</p>
+        </div>
+        <div class="card-body">
+            <h6>Sedadla</h6>
+            @foreach (var seat in _seats)
+            {
+                <p>Řada: @seat.Row, sedadlo @seat.Column</p>
+            }
+        </div>
+    </div>
+    <AuthorizeView>
+        <Authorized>
+            @if (_user.Forename == null || _user.Surname == null || _user.PhoneNumber == null)
+            {
+                <div class="mt-5 row">
+                    <label for="name" class="form-label">Jmeno</label>
+                    <input type="text" class="form-control" id="name" @bind="_name">
+                </div>
+                <div class="mt-5 row">
+                    <label for="surname" class="form-label">Prijmeni</label>
+                    <input type="text" class="form-control" id="surname" @bind="_surname">
+                </div>
+                <div class="mt-3 row">
+                    <label for="phoneNumber" class="form-label">Telefon</label>
+                    <input type="text" class="form-control" id="phoneNumber" @bind="_phoneNumber">
+                </div>
+            }
+        </Authorized>
+        <NotAuthorized>
+            <div class="mt-5 row">
+                <label for="email" class="form-label">Email</label>
+                <input type="text" class="form-control" id="email" @bind="_email">
+            </div>
+            <div class="mt-3 row">
+                <label for="phoneNumber" class="form-label">Telefon</label>
+                <input type="text" class="form-control" id="phoneNumber" @bind="_phoneNumber">
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+    
+    <button class="btn btn-primary mt-5" @onclick="(e) => { CreateReservation(); }">Rezervovat</button>
+</div>
+
+@code {
+    Auditorium _auditorium;
+    Event _event;
+    List<Seat> _seats;
+    AppUser _user;
+    string _name = string.Empty;
+    string _surname = string.Empty;
+    string _email = string.Empty;
+    string _phoneNumber = string.Empty;
+    string _ip = string.Empty;
+
+    private EventCallback CreateReservation()
+    {
+        if (_user != null)
+        {
+            _user.Forename = _name;
+            _user.Surname = _surname;
+            _user.PhoneNumber = _phoneNumber;
+            _userService.UpdateUserData(_user);
+        }
+
+        var reservation = new Reservation()
+        {
+            Auditorium = _auditorium,
+            Event = _event,
+            Seats = _seats,
+            UserEmail = _email,
+            PhoneNumber = _phoneNumber,
+            User = _user
+        };
+        
+        if (!_reservationService.VerifyUserReservationSeatsCount(reservation))
+        {
+            _navigationManager.NavigateTo($"/reservation/seatsError");
+            return new EventCallback();
+        }
+        
+        else
+        {
+            var result = _reservationService.CreateReservationAsync(reservation);
+            if (result == null)
+            {
+                _navigationManager.NavigateTo($"/reservation/error");
+                return new EventCallback();
+            }
+            else
+            {
+                _navigationManager.NavigateTo($"/account/reservation/{result.Id}");
+                return new EventCallback();
+            }
+        }
+        
+    }
+
+    protected override void OnInitialized()
+    {
+        if (_reservationContainer.Auditorium != null && _reservationContainer.Event != null && _reservationContainer.Seats != null)
+        {
+            _auditorium = _reservationContainer.Auditorium;
+            _event = _reservationContainer.Event;
+            _seats = _reservationContainer.Seats;
+            _user = _userService.GetCurrentUser().Result;
+        }
+        else _navigationManager.NavigateTo("/");
+    }
+    
+}
