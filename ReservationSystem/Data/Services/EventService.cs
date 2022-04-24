@@ -80,7 +80,6 @@ namespace ReservationSystem.Data.Services
             {
                 DeleteSeat(seat);
             }
-            _dbContext.SaveChanges();
             return entity;
         }
 
@@ -98,12 +97,13 @@ namespace ReservationSystem.Data.Services
                 _dbContext.Users.Update(user);
             }
             _dbContext.Reservations.Remove(reservation);
-            _dbContext.SaveChanges();
         }
         public async Task DeleteEvent(Event _event)
         {
             var ev = _dbContext.Events.Include(e => e.Auditoriums).FirstOrDefault(e => e.Id == _event.Id);
-            var reservations = _dbContext.Reservations.Include(r => r.Event).Include(r => r.User).Where(r => r.Event.Id == ev.Id);
+            var reservations = _dbContext.Reservations
+                .Include(r => r.Event).Include(r => r.User)
+                .Where(r => r.Event.Id == ev.Id);
             foreach (var reservation in reservations)
             {
                 DeleteReservation(reservation);
