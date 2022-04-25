@@ -1,0 +1,290 @@
+@page "/admin/event/{Id:int}/addAuditorium"
+@using ReservationSystem.Data.Models
+@using ReservationSystem.Data.Services
+@inject EventService _eventService
+@inject NavigationManager _navigationManager
+
+
+<div class="container">
+    <h2>Přidání hlediště</h2>
+    <div class="form w-50">
+        <div class="mt-3 row">
+            <label for="NameInput" class="form-label">Název hlediště</label>
+            <input type="text" id="NameInput" class="form-control" name="RowsInput" @bind="_name"/>
+        </div>
+        <div class="mt-3 row">
+            <label for="RowsInput" class="form-label">Počet řad</label>
+            <input type="number" id="RowsInput" class="form-control" name="RowsInput" @bind="_rows"/>
+        </div>
+        <div class="mt-3 row">
+            <label for="ColumnsInput" class="form-label">Počet sedadel v řadě</label>
+            <input type="number" id="ColumnsInput" class="form-control" name="ColumnsInput" @bind="_columns"/>
+        </div>
+        <div class="mt-3">
+            <button class="btn btn-primary" @onclick="(e) => { InitializeAuditorium(); }">Potvrdit</button>
+        </div>
+    </div>
+    @if (_auditorium != null)
+    {
+        <div class="auditorium mt-5">
+            <h3>Nastavení míst</h3>
+            <di class="mt-5 mb-5 row w-25">
+                <label for="selectedType" class="form-label">Typ sedadel</label>
+                <select id="selectType" class="form-select" @bind="_nowSelectingType">
+                    <option value="1" selected>VIP</option>
+                    <option value="2">Sale</option>
+                </select>
+            </di>
+            <div class="auditorium-body">
+                @foreach (var seatRow in _seats)
+                {
+                    <div class="auditorium-row">
+                        @foreach (var seat in seatRow)
+                        {
+                            @if (seat.IsSelected != true)
+                            {
+                                if (seat.Type == SeatType.Vip)
+                                {
+                                    <div class="auditorium-seat vip" @onclick="(e) => { SelectSeat(seat); }">
+                                        <div class="auditorium-seat-desc">
+                                            <h6>Sedadlo @seat.Column</h6>
+                                            <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                            <p>VIP</p>
+                                        </div>
+                                    </div>
+                                }
+                                else if (seat.Type == SeatType.Sale)
+                                {
+                                    <div class="auditorium-seat sale" @onclick="(e) => { SelectSeat(seat); }">
+                                        <div class="auditorium-seat-desc">
+                                            <h6>Sedadlo @seat.Column</h6>
+                                            <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                            <p>Sale</p>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="auditorium-seat free" @onclick="(e) => { SelectSeat(seat); }">
+                                        <div class="auditorium-seat-desc">
+                                            <h6>Sedadlo @seat.Column</h6>
+                                            <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                            <p>Regular</p>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="auditorium-seat selected">
+                                    <div class="auditorium-seat-desc">
+                                        <h6>Sedadlo @seat.Column</h6>
+                                        <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+            <div style="display: flex; flex-flow: row;" class="mt-5">
+                <button class="btn btn-success" @onclick="(e) => { ConfirmSelection(); }">Potvrdit vyber</button>
+                <button class="btn btn-danger" @onclick="(e) => { DeselectSeats(); }">Zrusit vyber</button>
+            </div>
+            <button class="btn btn-primary mt-3" @onclick="() => { AddAuditorium(); }">Pridat hlediste</button>
+        </div>
+    }
+</div>
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private string _name = string.Empty;
+    private int _rows = 0;
+    private int _columns = 0;
+
+    SeatType _nowSelectingType = SeatType.Vip;
+
+    private Auditorium _auditorium;
+    private Event _event;
+    private List<List<Seat>> _seats = new List<List<Seat>>();
+
+    private Seat _firstSeat;
+    private Seat _secondSeat;
+    private List<Seat> _selectedSeats = new List<Seat>();
+
+    private EventCallback AddAuditorium()
+    {
+        var auditorium = _eventService.AddAuditorium(_auditorium);
+        _navigationManager.NavigateTo($"/event/{_event.Id}");
+        return new EventCallback();
+    }
+
+    private EventCallback SelectSeat(Seat seat)
+    {
+        if (_firstSeat != null)
+        {
+            _secondSeat = seat;
+            int x1 = 0;
+            int y1 = 0;
+            int x2 = 0;
+            int y2 = 0;
+            
+            if (_firstSeat.Column < _secondSeat.Column)
+            {
+                y1 = _firstSeat.Column - 1;
+                y2 = _secondSeat.Column - 1;
+            }
+            else if (_firstSeat.Column > _secondSeat.Column)
+            {
+                y1 = _secondSeat.Column - 1;
+                y2 = _firstSeat.Column - 1;
+            }
+            else
+            {
+                y1 = _firstSeat.Column - 1;
+                y2 = _secondSeat.Column - 1;
+            }
+            
+            if(_firstSeat.Row < _secondSeat.Row)
+            {
+                x1 = _firstSeat.Row-1;
+                x2 = _secondSeat.Row - 1;
+            }
+            else if (_firstSeat.Row > _secondSeat.Row)
+            {
+                x1 = _secondSeat.Row - 1;
+                x2 = _firstSeat.Row - 1;
+            }
+            else
+            {
+                x1 = _firstSeat.Row-1;
+                x2 = _firstSeat.Row-1;
+            }
+            _selectedSeats = GetSelectedSeats(x1, y1, x2, y2);
+        }
+        else
+        {
+            _firstSeat = seat;
+            _seats[seat.Row - 1][seat.Column - 1].IsSelected = true;
+        }
+        StateHasChanged();
+        return new EventCallback();
+    }
+
+    private List<Seat> GetSelectedSeats(int x1, int y1, int x2, int y2)
+    {
+        for (int y = y1; y <= y2; y++)
+        {
+            for (int x = x1; x <= x2; x++)
+            {
+                _selectedSeats.Add(_seats[x][y]);
+                _seats[x][y].IsSelected = true;
+            }
+        }
+        return _selectedSeats;
+    }
+
+    private EventCallback ConfirmSelection()
+    {
+        foreach (var seat in _selectedSeats)
+        {
+            _auditorium.Seats.Remove(_auditorium.Seats.FirstOrDefault(s => s.Row == seat.Row && s.Column == seat.Column));
+            if (_nowSelectingType == SeatType.Vip)
+            {
+                seat.Type = SeatType.Vip;
+                seat.Price = _event.VipPrice;
+            }
+            else if (_nowSelectingType == SeatType.Sale)
+            {
+                seat.Type = SeatType.Sale;
+                seat.Price = _event.SalePrice;
+            }
+            else
+            {
+                seat.Type = SeatType.Regular;
+                seat.Price = _event.Price;
+            }
+            seat.IsSelected = false;
+            _auditorium.Seats.Add(seat);
+        }
+        _seats = SortSeats(_auditorium.Seats.ToList());
+        _firstSeat = null;
+        _secondSeat = null;
+        _selectedSeats = new List<Seat>();
+        StateHasChanged();
+        return new EventCallback();
+    }
+
+    private EventCallback DeselectSeats()
+    {
+        _firstSeat = null;
+        _secondSeat = null;
+        _selectedSeats = new List<Seat>();
+        foreach (var seatColumn in _seats)
+        {
+            foreach (var seat in seatColumn)
+            {
+                seat.IsSelected = false;
+            }
+        }
+        StateHasChanged();
+        return new EventCallback();
+    }
+    
+    private EventCallback InitializeAuditorium()
+    {
+        List<Seat> seats = new List<Seat>();
+        
+        for (int j = 1; j < _rows+1; j++)
+        {
+            for (int i = 1; i < _columns+1; i++)
+            {
+                var seat = new Seat()
+                {
+                    Event = _event,
+                    Auditorium = _auditorium,
+                    Row = j,
+                    Column = i,
+                    Type = SeatType.Regular,
+                    Price = _event.Price
+                };
+                seats.Add(seat);
+            }
+        }
+        _auditorium = new Auditorium()
+        {
+            Name = _name,
+            Rows = _rows,
+            SeatsInRow = _columns,
+            Event = _event,
+            Seats = seats
+        };
+        _seats = SortSeats(seats);
+        StateHasChanged();
+        return new EventCallback();
+    }
+    
+    private List<List<Seat>> SortSeats(List<Seat> seats)
+    {
+        List<Seat> sortedSeats = seats.OrderBy(o => o.Row).ThenBy(o => o.Column).ToList();
+        var s = new List<List<Seat>>();
+        int seatCounter = 0;
+        for (int i = 0; i < _auditorium.Rows; i++)
+        {
+            List<Seat> seatsInRow = new List<Seat>();
+            for (int j = 0; j < _auditorium.SeatsInRow; j++)
+            {
+                seatsInRow.Add(sortedSeats[seatCounter]);
+                seatCounter++;
+            }
+            s.Add(seatsInRow);
+        }
+        return s;
+    }
+    protected override void OnInitialized()
+    {
+        _event = _eventService.GetEventById(Id);
+    }
+
+}

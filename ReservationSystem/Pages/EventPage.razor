@@ -7,7 +7,7 @@
 
 <h3>@_event.Name</h3>
 
-<div class="container">
+<div class="container d-flex align-items-start flex-wrap">
     <h4>Seznam hledišť</h4>
     @foreach (var auditorium in _event.Auditoriums)
     {
@@ -20,7 +20,14 @@
         </div>
     }
 </div>
- 
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <div class="contianer mt-3">
+            <button class="btn btn-warning" @onclick="(e) => { NavigateToAddAuditorium(); }">Přidat hlediště</button>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
 @code {
     [Parameter]
     public int Id { get; set; }
@@ -40,6 +47,12 @@
     EventCallback NavigateToAuditorium(Auditorium auditorium)
     {
         _navigation.NavigateTo($"/event/{Id}/auditorium/{auditorium.Id}");
+        return new EventCallback();
+    }
+
+    EventCallback NavigateToAddAuditorium()
+    {
+        _navigation.NavigateTo($"/admin/event/{_event.Id}/addAuditorium");
         return new EventCallback();
     }
 }

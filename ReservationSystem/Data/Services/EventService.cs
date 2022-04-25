@@ -13,16 +13,16 @@ namespace ReservationSystem.Data.Services
         {
             _dbContext = dbContext;
         }
-        public Event CreateEvent(Event e, List<Auditorium> auditoriums)
+        public Event CreateEvent(Event e)
         {
-            List<Auditorium> auditoria = new List<Auditorium>();
-            foreach (var auditorium in auditoriums)
-            {
-                var a = CreateAuditorium(auditorium, e, 1000);
-                auditoria.Add(a);
-            }
-
-            e.Auditoriums = auditoria;
+            // List<Auditorium> auditoria = new List<Auditorium>();
+            // foreach (var auditorium in auditoriums)
+            // {
+            //     var a = CreateAuditorium(auditorium, e, 1000);
+            //     auditoria.Add(a);
+            // }
+            //
+            // e.Auditoriums = auditoria;
             var eEntity = _dbContext.Events.Add(e).Entity;
             _dbContext.SaveChanges();
             return eEntity;
@@ -53,6 +53,19 @@ namespace ReservationSystem.Data.Services
             return aEntity;
         }
 
+        public Auditorium AddAuditorium(Auditorium auditorium)
+        {
+            foreach (var seat in auditorium.Seats)
+            {
+                _dbContext.Seats.Add(seat);
+            }
+            var _event = _dbContext.Events.Include(e => e.Auditoriums).FirstOrDefault(e => e.Id == auditorium.Event.Id);
+            _event.Auditoriums.Add(auditorium);
+            _dbContext.Events.Update(_event);
+            var result = _dbContext.Auditoriums.Add(auditorium).Entity;
+            _dbContext.SaveChanges();
+            return result;
+        }
         public List<Event> GetEvents()
         {
             return _dbContext.Events.ToList();
@@ -68,9 +81,6 @@ namespace ReservationSystem.Data.Services
             return _dbContext.Auditoriums.Include(a => a.Seats).ThenInclude(s => s.Reservation).FirstOrDefault(a => a.Id == auditoriumId);
         }
 
-        
-        
-        
         //MRDKA
         public Auditorium DeleteAuditorium(Auditorium auditorium)
         {

@@ -35,32 +35,44 @@
                 <label for="eventVenue" class="form-label">Místo konání</label>
                 <input type="text" @bind="eventVenue" class="form-control" id="eventVenue" placeholder="Název místa konání">
             </div>
-            <h4>Přidání hlediště</h4>
-            <div class="mb-3">
-                <label for="auditoriumName" class="form-label">Název</label>
-                <input type="text" @bind="eventAudiotrium.Name" class="form-control" id="auditoriumName" placeholder="Název hlediště">
+            <div class="mb-10">
+                <label for="price" class="form-label">Cena listku</label>
+                <input type="number" @bind="price" class="form-control" id="price">
             </div>
-            <div class="mb-3">
-                <label for="auditoriumRows" class="form-label">Počet řad</label>
-                <input type="number" @bind="eventAudiotrium.Rows" class="form-control" id="auditoriumRows">
+            <div class="mb-10">
+                <label for="salePrice" class="form-label">Cena listku ve sleve</label>
+                <input type="number" @bind="salePrice" class="form-control" id="salePrice">
             </div>
-            <div class="mb-3">
-                <label for="auditoriumSeatsInRow" class="form-label">Počet sedadel v řadě</label>
-                <input type="number" @bind="eventAudiotrium.SeatsInRow" class="form-control" id="auditoriumSeatsInRow">
+            <div class="mb-10">
+                <label for="vipPrice" class="form-label">Cena VIP listku</label>
+                <input type="number" @bind="vipPrice" class="form-control" id="vipPrice">
             </div>
-            <div class="mb-3">
-                <button class="btn btn-primary" @onclick="e => { AddVenue(); }">Přidat hlediště</button>
-            </div>
-            @foreach (var a in auditoriums)
-            {
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">@a.Name</h6>
-                        <p class="card-text">Kapacita: @(a.Rows*a.SeatsInRow) míst</p>
-                        <button class="btn btn-danger" @onclick="(e) => { DeleteVenue(a); }">Odstranit</button>
-                    </div>
-                </div>
-            }
+            @* <h4>Přidání hlediště</h4> *@
+            @* <div class="mb-3"> *@
+            @*     <label for="auditoriumName" class="form-label">Název</label> *@
+            @*     <input type="text" @bind="eventAudiotrium.Name" class="form-control" id="auditoriumName" placeholder="Název hlediště"> *@
+            @* </div> *@
+            @* <div class="mb-3"> *@
+            @*     <label for="auditoriumRows" class="form-label">Počet řad</label> *@
+            @*     <input type="number" @bind="eventAudiotrium.Rows" class="form-control" id="auditoriumRows"> *@
+            @* </div> *@
+            @* <div class="mb-3"> *@
+            @*     <label for="auditoriumSeatsInRow" class="form-label">Počet sedadel v řadě</label> *@
+            @*     <input type="number" @bind="eventAudiotrium.SeatsInRow" class="form-control" id="auditoriumSeatsInRow"> *@
+            @* </div> *@
+            @* <div class="mb-3"> *@
+            @*     <button class="btn btn-primary" @onclick="e => { AddVenue(); }">Přidat hlediště</button> *@
+            @* </div> *@
+            @* @foreach (var a in auditoriums) *@
+            @* { *@
+            @*     <div class="card"> *@
+            @*         <div class="card-body"> *@
+            @*             <h6 class="card-title">@a.Name</h6> *@
+            @*             <p class="card-text">Kapacita: @(a.Rows*a.SeatsInRow) míst</p> *@
+            @*             <button class="btn btn-danger" @onclick="(e) => { DeleteVenue(a); }">Odstranit</button> *@
+            @*         </div> *@
+            @*     </div> *@
+            @* } *@
             
             <div class="mt-8">
                 <button class="btn btn-success" @onclick="(e) => { CreateEvent(); }">Vytvořit událost</button>
@@ -79,23 +91,24 @@
     string eventTime = String.Empty;
     string eventOrganiser = String.Empty;
     string eventVenue = String.Empty;
-    Auditorium eventAudiotrium = new Auditorium();
-    List<Auditorium> auditoriums = new List<Auditorium>();
+    int price = 0;
+    int salePrice = 0;
+    int vipPrice = 0;
 
-    EventCallback AddVenue()
-    {
-        auditoriums.Add(eventAudiotrium);
-        eventAudiotrium = new Auditorium();
-        StateHasChanged();
-        return new EventCallback();
-    }
+    // EventCallback AddVenue()
+    // {
+    //     auditoriums.Add(eventAudiotrium);
+    //     eventAudiotrium = new Auditorium();
+    //     StateHasChanged();
+    //     return new EventCallback();
+    // }
 
-    EventCallback DeleteVenue(Auditorium a)
-    {
-        auditoriums.Remove(a);
-        StateHasChanged();
-        return new EventCallback();
-    }
+    // EventCallback DeleteVenue(Auditorium a)
+    // {
+    //     auditoriums.Remove(a);
+    //     StateHasChanged();
+    //     return new EventCallback();
+    // }
 
     EventCallback CreateEvent()
     {
@@ -108,10 +121,12 @@
                 Name = eventName,
                 Venue = eventVenue,
                 Organiser = eventOrganiser,
-                Auditoriums = auditoriums,
-                HappeningDate = eventDate
+                HappeningDate = eventDate,
+                Price = price,
+                VipPrice = vipPrice,
+                SalePrice = salePrice
             };
-            var e = _eventService.CreateEvent(_event, auditoriums);
+            var e = _eventService.CreateEvent(_event);
         
             _navigation.NavigateTo($"/event/{e.Id}");
             return new EventCallback();
