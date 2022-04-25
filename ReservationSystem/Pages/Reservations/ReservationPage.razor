@@ -54,6 +54,7 @@
             </div>
         </NotAuthorized>
     </AuthorizeView>
+    <h6 class="mt-4">Celkem k úhradě: @CalculateResPrice()</h6>
     
     <button class="btn btn-primary mt-5" @onclick="(e) => { CreateReservation(); }">Rezervovat</button>
 </div>
@@ -69,6 +70,15 @@
     string _phoneNumber = string.Empty;
     string _ip = string.Empty;
 
+    private int CalculateResPrice()
+    {
+        int result = 0;
+        foreach (var seat in _seats)
+        {
+            result += (int)seat.Price;
+        }
+        return result;
+    }
     private EventCallback CreateReservation()
     {
         if (_user != null)

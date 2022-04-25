@@ -33,13 +33,39 @@
                         {
                             @if (seat.IsSelected != true)
                             {
-                                <div class="auditorium-seat free" @onclick="(e) => { SeatSelection(seat); }">
-                                    <div class="auditorium-seat-desc">
-                                        <h6>Sedadlo @seat.Column</h6>
-                                        <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
-                                        <div class="not-reserved auditorium-seat-desc-text">Volné</div>
+                                if (seat.Type == SeatType.Vip)
+                                {
+                                    <div class="auditorium-seat vip" @onclick="(e) => { SeatSelection(seat); }">
+                                        <div class="auditorium-seat-desc">
+                                            <h6>Sedadlo @seat.Column</h6>
+                                            <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                            <div class="not-reserved auditorium-seat-desc-text">VIP - Volné</div>
+                                            <div class="auditorium-seat-desc-text">Cena: (@seat.Price)Kč</div>
+                                        </div>
                                     </div>
-                                </div>
+                                }
+                                else if (seat.Type == SeatType.Sale)
+                                {
+                                    <div class="auditorium-seat sale" @onclick="(e) => { SeatSelection(seat); }">
+                                        <div class="auditorium-seat-desc">
+                                            <h6>Sedadlo @seat.Column</h6>
+                                            <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                            <div class="not-reserved auditorium-seat-desc-text">Sleva - Volné</div>
+                                            <div class="auditorium-seat-desc-text">Cena: (@seat.Price)Kč</div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="auditorium-seat free" @onclick="(e) => { SeatSelection(seat); }">
+                                        <div class="auditorium-seat-desc">
+                                            <h6>Sedadlo @seat.Column</h6>
+                                            <div class="auditorium-seat-desc-text">Řada @seat.Row</div>
+                                            <div class="not-reserved auditorium-seat-desc-text">Volné</div>
+                                            <div class="auditorium-seat-desc-text">Cena: (@seat.Price)Kč</div>
+                                        </div>
+                                    </div>
+                                }
                             }
                             else {
                                 <div class="auditorium-seat selected" @onclick="(e) => { SeatDeselection(seat); }">
@@ -64,12 +90,14 @@
                 <div class="card" style="margin: 0.5rem;">
                     <div class="card-body">
                         <h6 class="card-title">Sedadlo @selectedSeat.Column řada @selectedSeat.Row</h6>
+                        <p>@selectedSeat.Type.ToString() - (@selectedSeat.Price)Kč</p>
                         <button class="btn btn-danger" @onclick="(e) =>  { SeatDeselection(selectedSeat); }">Remove</button>
                     </div>
                 </div>
             }
-            <button class="btn btn-primary mt-4" @onclick="(e) => { ConfirmReservation(); }">Potvrdit rezervaci</button>
+
         </div>
+        <button class="btn btn-primary mt-4" @onclick="(e) => { ConfirmReservation(); }">Potvrdit rezervaci</button>
     }
 </div>
 
